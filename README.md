@@ -9,7 +9,8 @@ This repository contains **Terraform configurations** for provisioning and manag
 > → The VMware vSphere provider **must be pre-downloaded** and placed in a local mirror or project directory before running `terraform init`.
 
 > ⚠️ **Important – Not greenfield**  
-> This project **does not create** the datacenter, clusters, ESXi hosts, datastores or basic networking from scratch.  
+> This project **does not create** the datacenter, clusters, ESXi hosts, datastores or basic networking from scratch.
+> The ESXI hosts joining actions, datatcenter definition, datastores definition, and networking should be implemented by IT infrastructure team.  
 > It assumes these foundational objects already exist.
 
 Main goals:
@@ -24,52 +25,51 @@ Main goals:
 ## Current Repository Structure (2026)
 
 ```text
-terraform/
-├── README.md
-├── dev/
-│   ├── data-modules/
-│   ├── main.tf
-│   ├── provisioning/
-│   │   ├── base-setup/
-│   │   └── oracle_rac/
-│   ├── terraform.tfvars
-│   └── variables.tf
-├── prod/
-│   ├── CRM/
-│   ├── MOCN/
-│   └── RnD-MCI/
-│       ├── deployment/               # Phase 2 – main VM provisioning
-│       │   ├── backend.tf
-│       │   ├── data-modules/
-│       │   ├── main.tf
-│       │   ├── output.tf
-│       │   ├── provisioning/
-│       │   └── variables.tf
-│       ├── full-deploy.sh            # Orchestrates both phases + pause
-│       └── prereq/                   # Phase 1 – templates, pools, libraries
-│           ├── backend.tf
-│           ├── data-modules/
-│           ├── main.tf
-│           ├── output.tf
-│           ├── provisioning/
-│           └── resource-modules/
-└── stage/
-    ├── CRM/
-    ├── MOCN/
-    └── RnD-MCI/                         # (currently minimal / placeholder)
+terraform-vsphere/
+    ├── deployment                    # Phase 2 – main VM provisioning
+    │   ├── backend.tf
+    │   ├── data-modules
+    │   │   ├── main.tf
+    │   │   ├── output.tf
+    │   │   └── variables.tf
+    │   ├── main.tf
+    │   ├── output.tf
+    │   ├── provisioning
+    │   │   ├── cloud-init.tftpl
+    │   │   ├── main.tf
+    │   │   ├── output.tf
+    │   │   └── variables.tf
+    │   ├── terraform.tfvars
+    │   └── variables.tf
+    ├── full-deploy.sh                # Orchestrates both phases + pause
+    ├── prereq                        # Phase 1 – templates, pools, libraries
+    │   ├── backend.tf
+    │   ├── data-modules
+    │   │   ├── main.tf
+    │   │   ├── output.tf
+    │   │   └── variables.tf
+    │   ├── main.tf
+    │   ├── output.tf
+    │   ├── provisioning
+    │   │   ├── cloud-init.tftpl
+    │   │   ├── main.tf
+    │   │   ├── output.tf
+    │   │   └── variables.tf
+    │   ├── resource-modules
+    │   │   ├── main.tf
+    │   │   ├── output.tf
+    │   │   └── variables.tf
+    │   ├── terraform.tfvars
+    │   └── variables.tf
+    └── README.md
 ```
 
 # vSphere Terraform Examples & Patterns
 
 ## Environments / Folders Overview
 
-- **`dev/`**  
-  Mostly self-contained simple clusters  
-  - base-setup  
-  - oracle_rac example
-
-- **`prod/RnD-MCI/`**  
-  Two-phase approach (recommended for production-like / air-gapped setups)
+- **`terraform-vsphere`**  
+  Two-phase approach (recommended for production-like, with capability of air-gapped setups)
 
   - `prereq/` → prepares templates, folders, resource pools, content libraries  
   - `deployment/` → clones / deploys final application VMs from prepared templates
@@ -82,12 +82,12 @@ terraform/
 | `resource-modules/`          | Creates new resource pools & content libraries (only when configured)   | prereq              |
 | `provisioning/` (in prereq)  | Creates VM templates from existing VMs (cloning + cloud-init)          | prereq              |
 | `provisioning/` (in deployment) | Deploys final VM clusters from templates (with per-VM IPs, disks, cloud-init) | deployment          |
-| `prereq/`                    | Phase 1 – infrastructure preparation (RnD-MCI style)                   | RnD-MCI only        |
-| `deployment/`                | Phase 2 – application / service VMs                                     | RnD-MCI only        |
+| `prereq/`                    | Phase 1 – infrastructure preparation (RnD-MCI style)                   | prereq        |
+| `deployment/`                | Phase 2 – application / service VMs                                     | deployment        |
 
-## Two-Phase Workflow – RnD-MCI (recommended pattern)
+## Two-Phase Workflow – (recommended pattern)
 
-Most production-like folders (especially RnD-MCI) use **two Terraform runs** with a **manual intervention pause** in between.
+Most production-like folders, use **two Terraform runs** with a **manual intervention pause** in between.
 
 ### 1. Phase 1 – `prereq/`
 
@@ -120,8 +120,9 @@ You **must** perform these actions in the vSphere Client before Phase 2:
 
 ### Recommended way to run both phases
 
+after cloning:
 ```bash
-cd prod/RnD-MCI
+cd terraform-vsphere/
 ./full-deploy.sh
 ```
 
@@ -164,6 +165,7 @@ terraform/
                             └── terraform-provider-vsphere_v2.15.0_x5
 ```
 2. Global user mirror
+##### Recommended location to accommodate the terraform provider binary(binary installed from vmware official github page):
 ```text
 ~/.terraform.d/plugins/registry.terraform.io/vmware/vsphere/2.15.0/linux_amd64/...
 ```
@@ -202,12 +204,20 @@ To successfully use this repository:
    - `general_customize_vm_timeout`
 
 5. **Deploy with the helper script** (recommended)  
-   For RnD-MCI-style folders, simply run:
+   For new folders that you may demand to create/extend the current project, simply copy and paste the file/folder format directory, and make the whole current setup as a sub-directory, then run(for ex.):
    ```bash
-   cd prod/RnD-MCI
+   cd terraform-vsphere/prod/
+   ./full-deploy.sh
+   ```
+   Or:
+   ```bash
+   cd terraform-vsphere/stage/
    ./full-deploy.sh
    ```
 
-Good luck with your air-gapped vSphere Terraform deployments! 🚀
+   Comprehensively, you can name the foders whatever you want to form a multi-setup/multi-cluster implementation all on one.
+
+Good luck with your air-gapped/public vSphere Terraform deployments! 🚀
+I am open for any issue, suggestion, or colabration.
 
 
