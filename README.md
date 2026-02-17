@@ -4,9 +4,9 @@
 
 This repository contains **Terraform configurations** for provisioning and managing VMware vSphere infrastructure in **air-gapped** environments (`dev`, `stage`, `prod`).
 
-> ⚠️ **Critical – Air-gapped environment**  
-> No internet access is allowed.  
-> → The VMware vSphere provider **must be pre-downloaded** and placed in a local mirror or project directory before running `terraform init`.
+> ⚠️ **Caution – Air-gapped environment is guided at end of this README**  
+> No internet access is allowed in an air-gapped environment.  
+> → The VMware vSphere provider **must be pre-downloaded** and placed in a local mirror or project directory before running `terraform init` in thesecases.
 
 > ⚠️ **Important – Not greenfield**  
 > This project **does not create** the datacenter, clusters, ESXi hosts, datastores or basic networking from scratch.
