@@ -22,6 +22,18 @@ Main goals:
 
 ---
 
+## Prerequisites & Required Knowledge
+
+To fully leverage this repository and understand its design, implementation patterns, and intended workflows, users should have a solid working knowledge of:
+
+- cloud-init configuration syntax, schema structure, and practical use cases
+- VMware vCenter / vSphere (ESXi 7.x and 8.x) architecture and operational concepts
+- The Terraform `vmware/vsphere` (HashiCorp) provider, including cloning, customization, content libraries, and remote state usage
+
+This project assumes familiarity with these technologies. Without that foundation, it may be difficult to correctly interpret, extend, or troubleshoot the infrastructure logic implemented here.
+
+---
+
 ## Current Repository Structure (2026)
 
 ```text
