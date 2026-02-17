@@ -1,0 +1,115 @@
+#cloud-config
+%{ if length(cloud_init.growpart_devices) > 0 }
+growpart:
+  mode: auto
+  devices: ${jsonencode(cloud_init.growpart_devices)}
+  ignore_growroot_disabled: false
+%{ endif }
+
+%{ if cloud_init.resize_rootfs != null && trimspace(cloud_init.resize_rootfs) != "" }
+resize_rootfs: ${cloud_init.resize_rootfs}
+%{ endif }
+
+%{ if cloud_init.disable_root != null && trimspace(cloud_init.disable_root) != "" }
+disable_root: ${cloud_init.disable_root}
+%{ endif }
+
+%{ if cloud_init.timezone != null && trimspace(cloud_init.timezone) != "" }
+timezone: ${cloud_init.timezone}
+%{ endif }
+
+%{ if length(cloud_init.users) > 0 }
+users:
+%{ for u in cloud_init.users ~}
+  - name: ${u.name}
+    %{ if u.gecos != null && trimspace(u.gecos) != "" }
+    gecos: "${u.gecos}"
+    %{ endif }
+    primary_group: ${u.primary_group}
+    groups: ${join(", ", u.groups)}
+    sudo: ${u.sudo}
+    lock_passwd: ${u.lock_passwd}
+    passwd: ${u.passwd}
+    shell: ${u.shell}
+    ssh_authorized_keys:
+      %{ if length(u.ssh_authorized_keys) > 0 }
+      %{~ for key in u.ssh_authorized_keys ~}
+      - ${key}
+      %{~ endfor ~}
+      %{ else }
+      - ""
+      %{ endif }
+%{ endfor ~}
+%{ endif }
+
+%{ if length(cloud_init.fs_setup) > 0 }
+fs_setup:
+%{ for fs in cloud_init.fs_setup ~}
+  - label: ${fs.label}
+    filesystem: "${fs.filesystem}"
+    device: ${fs.device}
+%{ endfor ~}
+%{ endif }
+
+%{ if cloud_init.package_update != null && trimspace(cloud_init.package_update) != "" }
+package_update: ${cloud_init.package_update}
+%{ endif }
+
+%{ if cloud_init.package_upgrade != null && trimspace(cloud_init.package_upgrade) != "" }
+package_upgrade: ${cloud_init.package_upgrade}
+%{ endif }
+
+%{ if cloud_init.ssh_pwauth != null && trimspace(cloud_init.ssh_pwauth) != "" }
+ssh_pwauth: ${cloud_init.ssh_pwauth}
+%{ endif }
+
+%{ if length(cloud_init.runcmd) > 0 }
+runcmd:
+%{ for cmd in cloud_init.runcmd ~}
+  - ${cmd}
+%{ endfor ~}
+%{ endif }
+
+%{ if cloud_init.manage_resolv_conf != null && length(cloud_init.manage_resolv_conf) > 0 }
+manage_resolv_conf: true
+resolv_conf:
+  %{ if cloud_init.manage_resolv_conf.domain != null && trimspace(cloud_init.manage_resolv_conf.domain) != "" }
+  domain: ${cloud_init.manage_resolv_conf.domain}
+  %{ endif }
+  %{ if cloud_init.manage_resolv_conf.nameservers != null && length(cloud_init.manage_resolv_conf.nameservers) > 0 }
+  nameservers: ${join(", ", cloud_init.manage_resolv_conf.nameservers)}
+  %{ endif }
+  options: {rotate: ${try(cloud_init.manage_resolv_conf.options.rotate, false)}, timeout: ${try(cloud_init.manage_resolv_conf.options.timeout, 3)}}
+  %{ if cloud_init.manage_resolv_conf.searchdomains != null && length(cloud_init.manage_resolv_conf.searchdomains) > 0 }
+  searchdomains: ${join(", ", cloud_init.manage_resolv_conf.searchdomains)}
+  %{ endif }
+  %{ if cloud_init.manage_resolv_conf.sortlist != null && length(cloud_init.manage_resolv_conf.sortlist) > 0 }
+  sortlist: ${join(", ", cloud_init.manage_resolv_conf.sortlist)}
+  %{ endif }
+%{ endif }
+
+%{ if cloud_init.yum_repos != null && length(cloud_init.yum_repos) > 0 }
+yum_repo_dir: "/etc/yum.repos.d"
+yum_repos:
+%{ for repos in cloud_init.yum_repos ~}
+  &{repos.name}:
+    name: &{repos.title}
+    baseurl: &{repos.baseurl}
+    priority: &{repos.priority}
+    %{ if repos.skip_if_unavailable != null && trimspace(repos.skip_if_unavailable) != "" }
+    skip_if_unavailable: &{repos.skip_if_unavailable}
+    %{ endif }
+    gpgcheck: &{repos.gpgcheck}
+    gpgkey: &{repos.gpgkey}
+    %{ if repos.enabled_metadata != null && trimspace(repos.enabled_metadata) != "" }
+    enabled_metadata: &{repos.enabled_metadata}
+    %{ endif }
+%{ endfor ~}
+%{ endif }
+
+%{ if length(cloud_init.bootcmd) > 0 }
+bootcmd:
+%{ for cmd in cloud_init.bootcmd ~}
+  - ${cmd}
+%{ endfor ~}
+%{ endif }
